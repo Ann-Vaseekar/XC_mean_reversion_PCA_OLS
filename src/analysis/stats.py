@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def compute_stats(rets):
@@ -41,10 +42,40 @@ def analyze_signal(rets,signal):
     return pd.DataFrame(analysis)
 
 
-def compute_alpha(ret, mkt_ticker="BTCUSDT")
-    corr = ret.rolling(252).corr(ret[mkt_ticker])
-    vol = ret.rolling(252).std()
+def compute_alpha(ret, days=252, mkt_ticker="BTCUSDT"):
+    corr = ret.rolling(days).corr(ret[mkt_ticker])
+    vol = ret.rolling(days).std()
     beta = (corr*vol).divide(vol[mkt_ticker],axis=0)
     resid = ret - beta.multiply(ret[mkt_ticker],0)
 
     return resid
+
+
+def drawdown(px):
+
+    dd = (px / px.expanding(min_periods=1).max() - 1)
+
+    dd.plot()
+    plt.show()
+
+    return dd
+
+
+def duration(px):
+    
+    peak = px.expanding(min_periods=1).max()
+    res = pd.DataFrame(index=px.index,columns=px.columns)
+    
+    for col in px.columns:
+        for dt in px.index:
+            
+            if px.loc[dt,col] >= peak.loc[dt,col]:
+                 res.loc[dt,col] = 0
+    
+            else:    
+                res.loc[dt,col] = res.loc[:dt,col].iloc[-2] + 1
+    
+    res.plot()
+    plt.show()
+
+    return res

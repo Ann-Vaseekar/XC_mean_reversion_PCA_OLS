@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd 
 from src.misc.read_write_json import read_json, write_json
 from tqdm import tqdm
+import os
 
 import logging
 
@@ -13,8 +14,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
-tickers = read_json("src/misc/tickers.json")
 
 #client = bnb_client()
 ###  if you're in the US, use: 
@@ -35,8 +34,17 @@ def get_binance_px(symbol,freq,start_ts,end_ts):
 
 def get_rets(freq='4h',start_ts = '2020-01-01',end_ts='2022-12-31'):
 
+
+    file_path = f"src/misc/valid_tickers_{start_ts[:4]}_to_{end_ts[:4]}.json"
+
+    if os.path.exists(file_path):
+        tickers = read_json(file_path)
+    else:
+        tickers = read_json("src/misc/tickers.json")
+    
+
     px = {}
-    for x in tqdm(tickers):
+    for x in tqdm(tickers+["BTCUSDT"]):
         try:
             data = get_binance_px(x,freq,start_ts,end_ts)
             px[x] = data.set_index('open_time')['close']
@@ -45,8 +53,10 @@ def get_rets(freq='4h',start_ts = '2020-01-01',end_ts='2022-12-31'):
 
     px = pd.DataFrame(px).astype(float)
     px = px.reindex(pd.date_range(px.index[0],px.index[-1],freq=freq))
-    ret = px.pct_change().dropna(how="all",axis=0).dropna(how="all",axis=1)
+    ret = px.pct_change().dropna(how="all",axis=0)
 
-    write_json(f"src/misc/valid_tickers_{start_ts[:4]}_to_{end_ts[:4]}.json", ret.columns.tolist())
+    if not os.path.exists(file_path):
+        rets_cols = ret.dropna(how="all",axis=1)
+        write_json(file_path, rets_cols.columns.tolist())
 
     return ret
