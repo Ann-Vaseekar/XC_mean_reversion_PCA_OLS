@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import logging
 import src.analysis.stats as stats
-from src.ols.ols import calc_resid_ols
-from src.pca.pca import calc_resid_pca
+from src.signal_construction.ols import calc_resid_ols
+from src.signal_construction.pca import calc_resid_pca
 from src.signal_construction.transform_signal import transform_signal, dollar_neutral_weights
 from src.signal_construction.reduce_trading import partial_adjustment_weights
 
