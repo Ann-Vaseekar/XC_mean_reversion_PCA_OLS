@@ -20,7 +20,7 @@ RANK_THRESH  = 0.2
 RHO          = 0.0
 
 
-def sharpe(ret: pd.Series, ann_factor: float) -> float:
+def sharpe(ret: pd.Series, ann_factor: float):
     """
     Computes sharpe ratio.
 
@@ -33,7 +33,7 @@ def sharpe(ret: pd.Series, ann_factor: float) -> float:
     return ret.mean() / ret.std() * np.sqrt(ann_factor)
 
 
-def resample_to_freq(px: pd.DataFrame, freq: str = "1d") -> pd.DataFrame:
+def resample_to_freq(px: pd.DataFrame, freq: str = "1d"):
     """
     Resample close prices to a given frequency and compute returns.
     Uses the last bar of each period as the close.
@@ -51,7 +51,7 @@ def resample_to_freq(px: pd.DataFrame, freq: str = "1d") -> pd.DataFrame:
 
 def freq_config(
         px: pd.DataFrame, freq: str, window_sizes: list | int = None
-        ) -> tuple[pd.DataFrame, float, list, callable]:
+        ):
     """
     Get rets, annualisation factor, window sizes, and window label
     function from the input price DataFrame and frequency string.
@@ -80,7 +80,7 @@ def freq_config(
     return rets, bar_hours, bars_pd, window_sizes, window_label
 
 
-def avg_holding_period(w: pd.DataFrame, bar_hours: int = 4) -> dict:
+def avg_holding_period(w: pd.DataFrame, bar_hours: int = 4):
     """
     Compute average holding period from weight matrix.
     Returns holding period in bars, hours, and days.
@@ -136,7 +136,7 @@ def run_one(
     rho: float = RHO,
     rank_thresh: float = RANK_THRESH,
     resid_df: pd.DataFrame = None,
-) -> dict:
+):
     """
     Run a single (n_comp, window_size) backtest.
 
@@ -151,28 +151,50 @@ def run_one(
         mkt_ticker (str or None): Benchmark ticker. Required for method="ols".
         resid_df (df or none): Pre-computed residuals. If None, computed internally.
     """
-    if resid_df is None:
-        resid_df = compute_resid_method(
-		      rets=rets, method=method, window_size=window_size,
-		      n_comp=n_comp, mkt_ticker=mkt_ticker
-		   )
-    resid_smoothed = resid_df.ewm(alpha=alpha).mean()
-    signal   = transform_signal(-resid_smoothed, how="rank", rank_thresh=rank_thresh)
+    if method in ["ols", "pca"]:
+        if resid_df is None:
+            resid_df = compute_resid_method(
+                rets=rets, method=method, window_size=window_size,
+                n_comp=n_comp, mkt_ticker=mkt_ticker
+            )
+        resid_smoothed = resid_df.ewm(alpha=alpha).mean()
+        signal   = transform_signal(-resid_smoothed, how="rank", rank_thresh=rank_thresh)
+    elif method=="combine":
+        methods = ["pca", "ols"]
+        signals, resids = [], []
+
+        for m in methods:
+            resid_df = compute_resid_method(
+                rets=rets, method=m, window_size=window_size,
+                n_comp=n_comp, mkt_ticker=mkt_ticker
+            )
+            resid_smoothed = resid_df.ewm(alpha=alpha).mean()
+            signals.append(transform_signal(-resid_smoothed, how="rank", rank_thresh=rank_thresh))
+            resids.append(resid_df)
+        
+        signal = sum(signals) / len(signals)
+        resid_df = sum(resids) / len(resids)
+
     w        = dollar_neutral_weights(signal)
     w        = partial_adjustment_weights(w, rho=rho)
-    w        = w.sub(w.mean(axis=1), axis=0)
 
     w_lag     = w.shift(1)
     gross_ret = (w_lag * rets).sum(axis=1)
-    to        = (w.fillna(0) - w.shift().fillna(0)).abs().sum(axis=1) / 2
+    to        = (w.fillna(0) - w.shift(1).fillna(0)).abs().sum(axis=1) / 2
     net_ret   = gross_ret - to * TCOST_BPS * 1e-4
-    to        = to.iloc[1:]  # drop cold start bar
-    net_ret   = net_ret.iloc[1:]  # drop cold start bar
+
+    if method=="pca":
+        cold_start_idx = 24//bar_hours * 2
+    else:
+        cold_start_idx = window_size + 24//bar_hours
+    to        = to.iloc[cold_start_idx:] 
+    net_ret   = net_ret.iloc[cold_start_idx:] 
 
     if oos_start is not None:
         gross_ret = gross_ret.loc[oos_start:]
         net_ret   = net_ret.loc[oos_start:]
         to        = to.loc[oos_start:]
+        w         = w.loc[oos_start:]
         if len(gross_ret) == 0:
             raise ValueError(f"No data after oos_start={oos_start}")
         bench = rets.loc[oos_start:, MKT_TICKER]
@@ -183,6 +205,8 @@ def run_one(
     holding_info = avg_holding_period(w, bar_hours=bar_hours)
 
     return {
+        # DataFrame
+        "portfolio_weights":    w,
         # Series
         "gross_cum":            (1 + gross_ret).cumprod() - 1,
         "net_cum":              (1 + net_ret).cumprod() - 1,
@@ -229,3 +253,6 @@ def results_to_series(results: dict, stat: str, col_key) -> pd.DataFrame:
         {w: v[stat] for w, v in results[col_key].items()}
     )
 
+
+def extract_weights(results, col_key, window):
+    return results[col_key][window]["portfolio_weights"]

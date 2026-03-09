@@ -18,7 +18,6 @@ def transform_signal(df, thresh=0.03, how="winsorize", rank_thresh=None):
         return df.where(mask, 0)
     
     elif how == "rank":
-        # try 0.2, 0.3?
 
         ranked = df.rank(axis=1, pct=True)
         
@@ -49,6 +48,11 @@ def standardise(df, window, min_period=1):
 
 
 def dollar_neutral_weights(signal):
-    signal = signal.sub(signal.mean(axis=1), axis=0)
-    weights = signal.div(signal.abs().sum(axis=1), axis=0)
-    return weights
+    longs = signal.where(signal > 0, 0)
+    shorts = signal.where(signal < 0, 0)
+    
+    long_weights = 0.5 * longs.div(longs.sum(axis=1), axis=0)
+    short_weights = 0.5 * shorts.div(shorts.abs().sum(axis=1), axis=0)
+    
+    weights = long_weights + short_weights
+    return weights.fillna(0)
