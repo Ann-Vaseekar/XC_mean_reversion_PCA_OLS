@@ -1,17 +1,24 @@
 import numpy as np
+import pandas as pd
 import warnings
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def calc_resid_ols(
-    ret,
-    window_size=400,
-    mkt_ticker="BTCUSDT",
-    min_obs_ratio=0.8,
+    ret: pd.DataFrame,
+    window_size: int = 400,
+    mkt_ticker: str = "BTCUSDT",
+    min_obs_ratio: float = 0.8,
 ):
     """
     Compute market-neutral residuals using rolling OLS regression.
+
+    Parameters:
+        ret (df): Raw return matrix.
+        window_size (int): Rolling window length in bars.
+        mkt_ticker (str): Market-proxy ticker.
+        min_obs_ratio (float): Min fraction of window required for a column to be included.
     """
 
     ret = ret.copy().astype(float)

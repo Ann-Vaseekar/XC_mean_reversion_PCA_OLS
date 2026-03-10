@@ -4,7 +4,10 @@ import pandas as pd
 def partial_adjustment_weights(w_star: pd.DataFrame, rho: float):
     """
     Apply partial adjustment to target weights and returns smooth weights.
-    rho: Persistence parameter (0 = full rebalance, 0.9 = slow trading)
+
+    Parameter:
+        w_star: Target weights to be adjusted
+        rho: Persistence parameter (0 = full rebalance, 0.9 = slow trading)
     """
     w = w_star.copy().fillna(0)
     w_adj = pd.DataFrame(index=w.index, columns=w.columns)

@@ -6,21 +6,23 @@ from sklearn.preprocessing import StandardScaler
 
 
 def calc_resid_pca(
-    ret,
-    n_components=3,
-    window_size=60,
-    min_obs_ratio=0.8,
-    plot_variance=False,
-    freq="4h"
+    ret: pd.DataFrame,
+    n_components: int = 3,
+    window_size: int = 60,
+    min_obs_ratio: float = 0.8,
+    plot_variance: bool = False,
+    freq: str = "4h"
 ):
     """
     Compute rolling PCA-based market-neutral residual returns.
 
-    daily_rets (df):                Raw return matrix 
-    n_components (int):             Number of PCA components to remove
-    window_size (int):              Rolling window length in bars
-    min_obs_ratio (float):          Min fraction of window required for a column to be included
-    plot_variance (bool):           If True, plot rolling explained variance of first 3 components
+    Parameters:
+        ret (df): Raw return matrix.
+        n_components (int): Number of PCA components to remove.
+        window_size (int): Rolling window length in bars.
+        min_obs_ratio (float): Min fraction of window required for a column to be included.
+        plot_variance (bool): If True, plot rolling explained variance of first 3 components.
+        freq (str): Frequency of data.
     """
 
     min_obs = int(window_size * min_obs_ratio)
@@ -112,9 +114,16 @@ def calc_resid_pca(
     return resid_df
 
 
-def plot_explained_variance(daily_rets, n_comps=3):
+def plot_explained_variance(rets: pd.DataFrame, n_comps: int = 3):
+    """
+    Plots explained variance.
 
-    ret_clean = daily_rets.dropna(how="all", axis=1).fillna(0)
+    Parameters:
+        rets (df): Raw return matrix.
+        n_comps (int): Number of PCA components to remove.
+    """
+
+    ret_clean = rets.dropna(how="all", axis=1).fillna(0)
     scaler = StandardScaler()
     returns_scaled = scaler.fit_transform(ret_clean)
 
@@ -140,13 +149,18 @@ def plot_explained_variance(daily_rets, n_comps=3):
 
 
 def calc_pca_loadings(
-    rets,
-    window_size,
-    n_components = 1,
+    rets: pd.DataFrame,
+    window_size: int,
+    n_components: int = 1,
 ):
     """
     Compute rolling PCA loadings over time.
     Returns DataFrame of shape (n_bars, n_assets) for each component.
+
+    Parameters:
+        rets (df): Raw return matrix.
+        n_components (int): Number of PCA components to remove.
+        window_size (int): Rolling window length in bars.
     """
 
     loadings = []

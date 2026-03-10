@@ -61,7 +61,6 @@ def freq_config(
         freq (str): Frequency to resample to.
         window_sizes (list/int): Length of rolling window calculation (no. of bars).
     """
-    rets         = resample_to_freq(px, freq)
     if freq[-1] == "d":
         num_days     = int(freq.replace("d", ""))
         bar_hours    = 24 * num_days
@@ -84,6 +83,10 @@ def avg_holding_period(w: pd.DataFrame, bar_hours: int = 4):
     """
     Compute average holding period from weight matrix.
     Returns holding period in bars, hours, and days.
+
+    Parameters:
+        w (df): weights
+        bar_hours (int): length of period b/w bars (hours)
     """
     # One-way turnover per bar
     to = (w.fillna(0) - w.shift().fillna(0)).abs().sum(axis=1) / 2
@@ -236,7 +239,11 @@ def run_one(
 
 def results_to_scalar_df(results: dict, stat: str) -> pd.DataFrame:
     """
-    Extract a scalar stat: rows=window months, columns=n_comp or mkt_ticker.
+    Extract a scalar stat.
+
+    Parameters:
+        results (dict): results from backtest run
+        stat (str): name of time-series statistic to extract
     """
     return pd.DataFrame(
         {col_key: {w: v[stat] for w, v in wins.items()}
@@ -244,15 +251,16 @@ def results_to_scalar_df(results: dict, stat: str) -> pd.DataFrame:
     )
 
 
-def results_to_series(results: dict, stat: str, col_key) -> pd.DataFrame:
+def results_to_series(results: dict, stat: str, col_key: str) -> pd.DataFrame:
     """
     Extract a time-series stat for one n_comp or mkt_ticker:
     rows=dates, columns=window months.
+
+    Parameters:
+        results (dict): results from backtest run
+        stat (str): name of time-series statistic to extract
+        col_ket (str): columns=n_comp or mkt_ticker
     """
     return pd.DataFrame(
         {w: v[stat] for w, v in results[col_key].items()}
     )
-
-
-def extract_weights(results, col_key, window):
-    return results[col_key][window]["portfolio_weights"]
