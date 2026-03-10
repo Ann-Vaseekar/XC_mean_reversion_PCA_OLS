@@ -1,7 +1,7 @@
 from binance.client import Client as bnb_client
 from datetime import datetime
 import pandas as pd
-from get_data.read_write_json import read_json, write_json
+from src.get_data.read_write_json import read_json, write_json
 from tqdm import tqdm
 import os
 import logging
