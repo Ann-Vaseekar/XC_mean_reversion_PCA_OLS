@@ -57,10 +57,11 @@ def freq_config(
     function from the input price DataFrame and frequency string.
 
     Parameters:
-        px (df): Prices matrix.
+        rets (df): Returns matrix.
         freq (str): Frequency to resample to.
         window_sizes (list/int): Length of rolling window calculation (no. of bars).
     """
+    rets = resample_to_freq(px, freq)
     if freq[-1] == "d":
         num_days     = int(freq.replace("d", ""))
         bar_hours    = 24 * num_days
@@ -231,6 +232,7 @@ def run_one(
         "beta":                 full_stats["beta"].iloc[0],
         "hit_rate":             full_stats["hit_rate"].iloc[0],
         "r_squared":            full_stats["r_squared"].iloc[0],
+        "IR":                   full_stats["IR"].iloc[0],
         "avg_turnover":         to.mean(),
         "cost_drag_ann":        (to * TCOST_BPS * 1e-4).mean() * ann_factor,
         "n_obs":                len(gross_ret),

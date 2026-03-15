@@ -35,6 +35,10 @@ def compute_full_stats(rets, market_rets, freq="4h"):
     stats["beta_tstat"] = model.tvalues["market"]
     stats["r_squared"] = model.rsquared
 
+    resid = y - beta * df["market"]
+
+    stats["IR"] = resid.mean() / resid.std() * np.sqrt(PERIODS_PER_YEAR)
+
     return pd.DataFrame(stats, index=[0])
 
 

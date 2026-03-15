@@ -106,6 +106,7 @@ def run_backtest_opt(
                 "alpha_tstat":            results["alpha_tstat"],
                 "hit_rate":               results["hit_rate"],
                 "avg_holding_days":       results["avg_holding_days"],
+                "IR":                     results["IR"],
             })
 
     summary = pd.DataFrame(rows)
@@ -175,6 +176,7 @@ def run_backtest_opt_combine(
                 "alpha_tstat":      results["alpha_tstat"],
                 "hit_rate":         results["hit_rate"],
                 "avg_holding_days": results["avg_holding_days"],
+                "IR":               results["IR"],
             })
 
     summary = pd.DataFrame(rows)
